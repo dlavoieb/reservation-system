@@ -1,0 +1,3 @@
+#!/bin/bash
+cat commands  | ./bin/reservation_client&
+cat commands2 | ./bin/reservation_client&

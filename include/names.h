@@ -7,5 +7,6 @@
 
 #define SHARED_MEMORY_NAME "final_frontier"
 #define MEM_SEM_NAME "ff_mem_sem"
+#define RES_SEM_NAME "ff_res_sem"
 
 #endif //RESERVATION_SYSTEM_NAMES_H

@@ -12,7 +12,7 @@
 #define DENIED 2
 
 typedef struct {
-    char* name;
+    char name[100];
     char section;
     __uint8_t table;
 } demand_t;
