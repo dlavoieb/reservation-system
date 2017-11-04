@@ -9,33 +9,24 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <sys/time.h>
 #include <pthread.h>
 #include <argp.h>
+#include "spinner.h"
 
 const char *argp_program_version = "Reservation Server 1.0";
 const char *argp_program_bug_address = "<david.lavoie-boutin@mail.mcgill.ca>";
 
-/* This structure is used by main to communicate with parse_opt. */
 struct arguments
 {
     int verbose;              /* The -v flag */
 } arguments;
 
-/*
-   OPTIONS.  Field 1 in ARGP.
-   Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
-*/
 static struct argp_option options[] =
 {
     {"verbose", 'v', 0, 0, "Suppress the verbose output"},
     {0}
 };
 
-/*
-   PARSER. Field 2 in ARGP.
-   Order of parameters: KEY, ARG, STATE.
-*/
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
     struct arguments *arguments = state->input;
@@ -53,20 +44,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-/*
-  DOC.  Field 4 in ARGP.
-  Program documentation.
-*/
-static char doc[] =
-        "Reservation Server -- A program to demonstrate inter-process communication for ECSE 427.";
-
-/*
-   The ARGP structure itself.
-*/
+static char doc[] = "Reservation Server -- A program to demonstrate inter-process communication for ECSE 427.";
 static struct argp argp = {options, parse_opt, NULL, doc};
 
-pthread_t tid;
-volatile int kill_cursor_flag = 0;
+extern pthread_t tid;
+extern int kill_cursor_flag;
 
 void interrupt_handler(int signum)
 {
@@ -92,7 +74,7 @@ void interrupt_handler(int signum)
 
     kill_cursor_flag=1;
     pthread_join(tid, NULL);
-    if (arguments.verbose) ("Exiting reservation server...\n");
+    if (arguments.verbose) printf("Exiting reservation server...\n");
     shm_unlink(SHARED_MEMORY_NAME);
     sem_unlink(MEM_SEM_NAME);
     sem_unlink(RES_SEM_NAME);
@@ -100,52 +82,12 @@ void interrupt_handler(int signum)
     exit(EXIT_SUCCESS);
 }
 
-void advance_cursor()
-{
-    static int pos=0;
-    char cursor[4]={'/','-','\\','|'};
-    printf("\b%c", cursor[pos]);
-    fflush(stdout);
-    pos = (pos+1) % 4;
-}
-
-void *do_cursor()
-{
-    if (arguments.verbose) {
-        struct timeval current_time, last_time;
-        gettimeofday(&current_time, NULL);
-        gettimeofday(&last_time, NULL);
-        int i;
-        while (kill_cursor_flag == 0) {
-            gettimeofday(&current_time, NULL);
-            long usec_comp = (current_time.tv_sec - last_time.tv_sec) > 0 ? current_time.tv_usec + 1000000
-                                                                          : current_time.tv_usec;
-            if ((usec_comp - last_time.tv_usec) > 80000) {
-                last_time.tv_usec = current_time.tv_usec;
-                last_time.tv_sec = current_time.tv_sec;
-                advance_cursor();
-            }
-        }
-    }
-    pthread_exit(NULL);
-}
-
 int main(int argc, char** argv)
 {
-
-    /*
-     * Plan:
-     * Initialize shared memory
-     * Create named semaphores
-     * Post on semaphore
-     * Enter wait loop
-     */
     arguments.verbose = 1;
-    /* Where the magic happens */
     argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
     size_t mem_size = sizeof(shr_memory_t);
-    int count = 0;
     signal(SIGINT, interrupt_handler);
     signal(SIGHUP, interrupt_handler);
     signal(SIGTERM, interrupt_handler);
@@ -162,7 +104,7 @@ int main(int argc, char** argv)
     sem_t *res_sem;
     res_sem = sem_open(RES_SEM_NAME, O_CREAT, 0644, 0);
 
-    pthread_create(&tid, NULL, do_cursor, NULL);
+    pthread_create(&tid, NULL, do_cursor, (void*) &arguments.verbose);
 
     while (1) {
         sem_wait(dem_sem);

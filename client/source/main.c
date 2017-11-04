@@ -10,9 +10,6 @@
 #include <errno.h>
 #include "functions.h"
 
-
-
-
 int main()
 {
 
