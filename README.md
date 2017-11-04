@@ -22,7 +22,7 @@ At this point, there is a new folder created in the root of the project, `bin` t
 ```bash
 ~/reservation-system $ ./bin/reservation_server &
 ~/reservation-system $ ./run
->> Placing reservation for Mike                                                 
+>> Placing reservation for Mike
 >> Placing reservation for Alice
 The demand for Mike was Accepted
 >> Placing reservation for Nico
@@ -100,3 +100,15 @@ The demand for Luke was Denied
 -------------------------
 >> 
 ```
+
+## Part 1 Questions
+
+The following steps would lead to a deadlock:
+
+```
+step 1: p0 executes command flag[0] = true;
+step 1: p1 executes command flag[1] = true;
+```
+
+At this point, which ever process is active, they will enter the while loop (delay) indefinately.
+
